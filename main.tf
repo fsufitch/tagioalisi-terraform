@@ -9,11 +9,12 @@ terraform {
   required_version = ">= 0.14.9"
 }
 
+### "Global" variables/data for configuring this TF run
 variable "stack_name" {
   default = "Tagioalisi-Test"
 }
 
-variable "parameter_suffix" {
+variable "stack_suffix" {
   default = "TEST"
 }
 
@@ -33,6 +34,10 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+data "aws_codestarconnections_connection" "fsufitch_github" {
+  arn = "arn:aws:codestar-connections:us-east-1:370059773792:connection/25796eae-e1e3-4371-a91b-c419ad0bb32c"
+}
+
 provider "aws" {
   profile = "default"
   region  = "us-east-1"
@@ -43,7 +48,7 @@ provider "aws" {
   }
 }
 
-############ Outputs
+### Outputs
 
 output "bot_public_host" {
   value = aws_instance.bot.public_dns

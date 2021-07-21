@@ -1,3 +1,4 @@
+### Configuration for custom VPC/networking
 resource "aws_vpc" "main" {
   cidr_block           = "10.8.0.0/16"
   enable_dns_hostnames = true
@@ -24,7 +25,7 @@ resource "aws_internet_gateway" "igw" {
 
 resource "aws_egress_only_internet_gateway" "eigw" {
   vpc_id = aws_vpc.main.id
-    tags = {
+  tags = {
     Name = "Tagioalisi EIGW"
   }
 }
@@ -37,12 +38,12 @@ resource "aws_route_table" "main" {
   }
 
   route {
-    ipv6_cidr_block = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.eigw.id 
+    ipv6_cidr_block        = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.eigw.id
   }
 }
 
 resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
-  subnet_id = aws_subnet.main.id
+  subnet_id      = aws_subnet.main.id
 }

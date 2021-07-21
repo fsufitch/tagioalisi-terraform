@@ -1,3 +1,5 @@
+### Resources for the actual bot runtime infrastructure
+
 resource "aws_security_group" "bot" {
   name        = "Tagioalisi Bot SG"
   description = "Rules for managing the traffic of Tagioalisi"
