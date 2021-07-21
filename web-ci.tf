@@ -1,7 +1,7 @@
 ### CodeBuild + CodePipeline for building/deploying the web UI
 
 resource "aws_codepipeline" "web" {
-  name = format("Tagioalisi-Web__%s", var.stack_suffix)
+  name     = format("Tagioalisi-Web__%s", var.stack_suffix)
   role_arn = aws_iam_role.web_ci.arn
 
   artifact_store {
@@ -79,7 +79,7 @@ resource "aws_codebuild_project" "web" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.web_ci_cache.bucket
+    location = format("%s/build_cache", aws_s3_bucket.web_ci.id)
   }
 
   environment {
@@ -108,18 +108,12 @@ resource "aws_codebuild_project" "web" {
 
     s3_logs {
       status   = "ENABLED"
-      location = aws_s3_bucket.web_ci_logs.id
+      location = format("%s/build_logs", aws_s3_bucket.web_ci.id)
     }
   }
 
   source {
-    type            = "GITHUB"
-    location        = "https://github.com/mitchellh/packer.git"
-    git_clone_depth = 1
-
-    git_submodules_config {
-      fetch_submodules = true
-    }
+    type = "CODEPIPELINE"
   }
 
   source_version = "master"
@@ -140,46 +134,111 @@ resource "aws_codebuild_project" "web" {
 }
 
 resource "aws_s3_bucket" "web_ci" {
-  bucket = format("Tagioalisi-Web-CodePipeline__%s", var.stack_suffix)
-  acl    = "private"
-}
-
-resource "aws_s3_bucket" "web_ci_cache" {
-  bucket = format("Tagioalisi-Web-CI-Cache__%s", var.stack_suffix)
-  acl    = "private"
-}
-
-resource "aws_s3_bucket" "web_ci_logs" {
-  bucket = format("Tagioalisi-Web-CI-Logs__%s", var.stack_suffix)
+  bucket = format("tagioalisi-web-codepipeline--%s", lower(var.stack_suffix))
   acl    = "private"
 }
 
 resource "aws_iam_role" "web_ci" {
   name = format("Tagioalisi-Web-CI__%s", var.stack_suffix)
-  assume_role_policy = <<POLICY
-  {
-    "Version": "2012-10-17",
-    "Statement": [
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "codebuild.amazonaws.com"
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "codebuild.amazonaws.com"
         },
-        "Action": "sts:AssumeRole"
+        "Action" : "sts:AssumeRole"
+      },
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "codepipeline.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
       }
     ]
-  }
-  POLICY
+  })
   inline_policy {
     name = format("Tagioalisi-Web-CI-Policy__%s", var.stack_suffix)
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
+        ## CodePipeline permissions
         {
-          Action   = ["s3:*"]
-          Effect   = "Allow"
-          Resource = format("%s,%s", aws_s3_bucket.web_ci.arn, aws_s3_bucket.web.arn)
+          Action = ["s3:*"]
+          Effect = "Allow"
+          Resource = [
+            aws_s3_bucket.web_ci.arn,
+            "${aws_s3_bucket.web_ci.arn}/*",
+            aws_s3_bucket.web.arn,
+            "${aws_s3_bucket.web.arn}/*",
+          ]
         },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "codestar-connections:UseConnection"
+          ],
+          "Resource" : "${data.aws_codestarconnections_connection.fsufitch_github.arn}"
+        },
+        ## CodeBuild permissions
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "codebuild:BatchGetBuilds",
+            "codebuild:StartBuild"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Resource" : [
+            "*"
+          ],
+          "Action" : [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ec2:CreateNetworkInterface",
+            "ec2:DescribeDhcpOptions",
+            "ec2:DescribeNetworkInterfaces",
+            "ec2:DeleteNetworkInterface",
+            "ec2:DescribeSubnets",
+            "ec2:DescribeSecurityGroups",
+            "ec2:DescribeVpcs"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ec2:CreateNetworkInterfacePermission"
+          ],
+          "Resource" : [
+            "arn:aws:ec2:${var.aws_region}:${var.aws_account}:network-interface/*"
+          ],
+          "Condition" : {
+            "StringEquals" : {
+              "ec2:AuthorizedService" : "codebuild.amazonaws.com"
+            }
+          }
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:*"
+          ],
+          "Resource" : [
+            "${aws_s3_bucket.web_ci.arn}",
+            "${aws_s3_bucket.web_ci.arn}/*"
+          ]
+        }
       ]
     })
   }

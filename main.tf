@@ -10,6 +10,15 @@ terraform {
 }
 
 ### "Global" variables/data for configuring this TF run
+
+variable "aws_account" {
+  default = 370059773792
+}
+
+variable "aws_region" {
+  default = "us-east-1"
+}
+
 variable "stack_name" {
   default = "Tagioalisi-Test"
 }
@@ -54,5 +63,12 @@ output "bot_public_host" {
   value = aws_instance.bot.public_dns
   depends_on = [
     aws_instance.bot
+  ]
+}
+
+output "web_s3_website" {
+  value = format("http://%s", aws_s3_bucket.web.website_endpoint)
+  depends_on = [
+    aws_s3_bucket.web
   ]
 }
