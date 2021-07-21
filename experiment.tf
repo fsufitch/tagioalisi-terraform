@@ -69,12 +69,29 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
+resource "aws_egress_only_internet_gateway" "eigw" {
+  vpc_id = aws_vpc.main.id
+    tags = {
+    Name = "Tagioalisi EIGW"
+  }
+}
+
 resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
   }
+
+  route {
+    ipv6_cidr_block = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.eigw.id 
+  }
+}
+
+resource "aws_route_table_association" "main" {
+  route_table_id = aws_route_table.main.id
+  subnet_id = aws_subnet.main.id
 }
 
 resource "aws_security_group" "bot" {
@@ -96,6 +113,7 @@ resource "aws_security_group" "bot" {
     protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
+    description      = "All outbound traffic OK"
   }
 }
 
@@ -105,7 +123,7 @@ resource "aws_instance" "bot" {
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.main.id
 
-  security_groups = [
+  vpc_security_group_ids = [
     aws_security_group.bot.id,
   ]
 
