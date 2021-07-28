@@ -52,6 +52,7 @@ resource "aws_codepipeline" "web" {
     name = "Deploy-S3-Website"
 
     action {
+      # https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-S3.html#action-reference-S3-config
       name            = "Deploy-S3"
       category        = "Deploy"
       owner           = "AWS"
@@ -65,6 +66,10 @@ resource "aws_codepipeline" "web" {
       }
     }
   }
+
+  depends_on = [
+    aws_codebuild_project.web,
+  ]
 }
 
 resource "aws_codebuild_project" "web" {
@@ -77,10 +82,10 @@ resource "aws_codebuild_project" "web" {
     type = "CODEPIPELINE"
   }
 
-  # cache {
-  #   type     = "S3"
-  #   location = format("%s/build_cache", aws_s3_bucket.web_ci.id)
-  # }
+  cache {
+    type     = "S3"
+    location = format("%s/cache", aws_s3_bucket.web_ci.bucket)
+  }
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
@@ -117,20 +122,6 @@ resource "aws_codebuild_project" "web" {
   }
 
   source_version = "master"
-
-  # vpc_config {
-  #   vpc_id = aws_vpc.main.id
-
-  #   subnets = [
-  #     aws_subnet.example1.id,
-  #     aws_subnet.example2.id,
-  #   ]
-
-  #   security_group_ids = [
-  #     aws_security_group.example1.id,
-  #     aws_security_group.example2.id,
-  #   ]
-  # }
 }
 
 resource "aws_s3_bucket" "web_ci" {
@@ -242,4 +233,25 @@ resource "aws_iam_role" "web_ci" {
       ]
     })
   }
+}
+
+resource "aws_s3_bucket_policy" "web_public" {
+  bucket = aws_s3_bucket.web.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = format("Tagioalisi-Web-S3-Policy__%s", var.stack_suffix)
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+        ]
+        Resource = [
+          aws_s3_bucket.web.arn,
+          "${aws_s3_bucket.web.arn}/*",
+        ]
+      },
+    ]
+  })
 }
