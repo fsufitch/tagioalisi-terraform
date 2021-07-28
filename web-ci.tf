@@ -127,6 +127,7 @@ resource "aws_codebuild_project" "web" {
 resource "aws_s3_bucket" "web_ci" {
   bucket = format("tagioalisi-web-codepipeline-%s", lower(var.stack_suffix))
   acl    = "private"
+  force_destroy = true
 }
 
 resource "aws_iam_role" "web_ci" {

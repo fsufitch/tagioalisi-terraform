@@ -75,4 +75,5 @@ output "web_s3_website" {
 
 output "db" {
   value = format("postgres://%s@%s:%s/%s", aws_db_instance.main.username, aws_db_instance.main.address, aws_db_instance.main.port, aws_db_instance.main.name)
+  sensitive = true
 }
