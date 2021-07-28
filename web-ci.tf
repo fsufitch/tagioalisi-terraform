@@ -77,10 +77,10 @@ resource "aws_codebuild_project" "web" {
     type = "CODEPIPELINE"
   }
 
-  cache {
-    type     = "S3"
-    location = format("%s/build_cache", aws_s3_bucket.web_ci.id)
-  }
+  # cache {
+  #   type     = "S3"
+  #   location = format("%s/build_cache", aws_s3_bucket.web_ci.id)
+  # }
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
@@ -134,7 +134,7 @@ resource "aws_codebuild_project" "web" {
 }
 
 resource "aws_s3_bucket" "web_ci" {
-  bucket = format("tagioalisi-web-codepipeline--%s", lower(var.stack_suffix))
+  bucket = format("tagioalisi-web-codepipeline-%s", lower(var.stack_suffix))
   acl    = "private"
 }
 

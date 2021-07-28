@@ -72,3 +72,7 @@ output "web_s3_website" {
     aws_s3_bucket.web
   ]
 }
+
+output "db" {
+  value = format("postgres://%s@%s:%s/%s", aws_db_instance.main.username, aws_db_instance.main.address, aws_db_instance.main.port, aws_db_instance.main.name)
+}
