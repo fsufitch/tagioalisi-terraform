@@ -1,9 +1,3 @@
-########### SSM Parameter "inputs"
-
-data "aws_ssm_parameter" "db_user" {
-  name = "/tagioalisi/default_db_user"
-}
-
 ########### SSM Parameter "outputs"
 
 resource "aws_ssm_parameter" "bot_public_host" {

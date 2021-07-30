@@ -1,5 +1,9 @@
 ### Resources for the RDS database
 
+variable "db_user" {
+  default = "tagioalisi"
+}
+
 resource "random_password" "db" {
   length = 32
 
@@ -36,7 +40,7 @@ resource "aws_db_instance" "main" {
   db_subnet_group_name = aws_db_subnet_group.main.name
   parameter_group_name = aws_db_parameter_group.main.name
 
-  username = data.aws_ssm_parameter.db_user.value
+  username = var.db_user
   password = random_password.db.result
   name     = "tagioalisi"
 
