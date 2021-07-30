@@ -1,8 +1,8 @@
-### CodeBuild + CodePipeline for building/deploying the web UI
+### CodeBuild + CodePipeline for building/deploying the Bot
 
-resource "aws_codepipeline" "web" {
-  name     = format("Tagioalisi_%s_Web", upper(var.stack_id)) # AWS Console says: Valid characters are [A-Za-z0-9.@-_]
-  role_arn = aws_iam_role.ci.arn
+resource "aws_codepipeline" "bot" {
+  name     = format("Tagioalisi_%s_Bot", upper(var.stack_id)) # AWS Console says: Valid characters are [A-Za-z0-9.@-_]
+  role_arn = aws_iam_role.bot_ci.arn
 
   artifact_store {
     location = aws_s3_bucket.ci.bucket
@@ -24,7 +24,7 @@ resource "aws_codepipeline" "web" {
 
       configuration = {
         ConnectionArn    = data.aws_codestarconnections_connection.fsufitch_github.arn
-        FullRepositoryId = "fsufitch/tagioalisi-web"
+        FullRepositoryId = "fsufitch/tagioalisi-bot"
         BranchName       = "master"
       }
     }
@@ -43,40 +43,40 @@ resource "aws_codepipeline" "web" {
       version          = "1"
 
       configuration = {
-        ProjectName = format("Tagioalisi_%s_Web", upper(var.stack_id))
+        ProjectName = format("Tagioalisi_%s_Bot", upper(var.stack_id))
       }
     }
   }
 
-  stage {
-    name = "Deploy-S3-Website"
+#   stage {
+#     name = "Deploy-Bot"
 
-    action {
-      # https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-S3.html#action-reference-S3-config
-      name            = "Deploy-S3"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = "S3"
-      input_artifacts = ["build_output"]
-      version         = "1"
+#     action {
+#       # https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-S3.html#action-reference-S3-config
+#       name            = "Deploy-S3"
+#       category        = "Deploy"
+#       owner           = "AWS"
+#       provider        = "S3"
+#       input_artifacts = ["build_output"]
+#       version         = "1"
 
-      configuration = {
-        BucketName = aws_s3_bucket.web.id
-        Extract    = true
-      }
-    }
-  }
+#       configuration = {
+#         BucketName = aws_s3_bucket.web.id
+#         Extract    = true
+#       }
+#     }
+#   }
 
   depends_on = [
-    aws_codebuild_project.web,
+    aws_codebuild_project.bot,
   ]
 }
 
-resource "aws_codebuild_project" "web" {
-  name          = format("Tagioalisi_%s_Web", upper(var.stack_id))
+resource "aws_codebuild_project" "bot" {
+  name          = format("Tagioalisi_%s_Bot", upper(var.stack_id))
   description   = "test_codebuild_project"
   build_timeout = "5"
-  service_role  = aws_iam_role.ci.arn
+  service_role  = aws_iam_role.bot_ci.arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -84,7 +84,7 @@ resource "aws_codebuild_project" "web" {
 
   cache {
     type     = "S3"
-    location = format("%s/codebuild/cache/web", aws_s3_bucket.ci.bucket)
+    location = format("%s/codebuild/cache/bot", aws_s3_bucket.ci.bucket)
   }
 
   environment {
@@ -113,7 +113,7 @@ resource "aws_codebuild_project" "web" {
 
     s3_logs {
       status   = "ENABLED"
-      location = format("%s/codebuild/web/logs", aws_s3_bucket.ci.id)
+      location = format("%s/codebuild/bot/logs", aws_s3_bucket.ci.id)
     }
   }
 
@@ -124,8 +124,8 @@ resource "aws_codebuild_project" "web" {
   source_version = "master"
 }
 
-resource "aws_iam_role" "ci" {
-  name = format("Tagioalisi-%s-Web-CI", upper(var.stack_id))
+resource "aws_iam_role" "bot_ci" {
+  name = format("Tagioalisi-%s-Bot-CI", upper(var.stack_id))
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -146,7 +146,7 @@ resource "aws_iam_role" "ci" {
     ]
   })
   inline_policy {
-    name = format("Tagioalisi-%s-Web-CI-Inline-Policy", upper(var.stack_id))
+    name = format("Tagioalisi-%s-Bot-CI-Inline-Policy", upper(var.stack_id))
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
@@ -157,8 +157,6 @@ resource "aws_iam_role" "ci" {
           Resource = [
             aws_s3_bucket.ci.arn,
             "${aws_s3_bucket.ci.arn}/*",
-            aws_s3_bucket.web.arn,
-            "${aws_s3_bucket.web.arn}/*",
           ]
         },
         {
@@ -228,25 +226,4 @@ resource "aws_iam_role" "ci" {
       ]
     })
   }
-}
-
-resource "aws_s3_bucket_policy" "web_public" {
-  bucket = aws_s3_bucket.web.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Id      = format("Tagioalisi-%s-Web-S3-Policy", upper(var.stack_id))
-    Statement = [
-      {
-        Effect    = "Allow"
-        Principal = "*"
-        Action = [
-          "s3:GetObject",
-        ]
-        Resource = [
-          aws_s3_bucket.web.arn,
-          "${aws_s3_bucket.web.arn}/*",
-        ]
-      },
-    ]
-  })
 }

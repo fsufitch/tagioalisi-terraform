@@ -44,7 +44,7 @@ resource "aws_db_instance" "main" {
   password = random_password.db.result
   name     = "tagioalisi"
 
-  final_snapshot_identifier = random_id.final_snapshot_identifier.id
+  final_snapshot_identifier = random_id.final_snapshot_identifier.hex
 }
 
 resource "random_id" "final_snapshot_identifier" {

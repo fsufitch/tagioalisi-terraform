@@ -58,6 +58,14 @@ provider "aws" {
   }
 }
 
+### Global Resources
+
+resource "aws_s3_bucket" "ci" {
+  bucket        = format("tagioalisi-ci-%s", lower(var.stack_id))
+  acl           = "private"
+  force_destroy = true
+}
+
 ### Outputs
 
 output "bot_public_host" {
