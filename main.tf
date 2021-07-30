@@ -19,13 +19,16 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-variable "stack_name" {
-  default = "Tagioalisi-Test"
+variable "stack_id" {
+  default     = ""
+  description = "unique string describing this stack of resources (default: workspace name)"
+  validation {
+    condition     = can(regex("^[a-z]{3,}$", var.stack_id))
+    error_message = "The stack ID must be a string at least 3 characters long of lowercase-only letters."
+  }
 }
 
-variable "stack_suffix" {
-  default = "TEST"
-}
+
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -52,7 +55,7 @@ provider "aws" {
   region  = "us-east-1"
   default_tags {
     tags = {
-      StackName = var.stack_name
+      StackID = format("Tagioalisi %s", upper(var.stack_id))
     }
   }
 }
@@ -74,6 +77,6 @@ output "web_s3_website" {
 }
 
 output "db" {
-  value = format("postgres://%s@%s:%s/%s", aws_db_instance.main.username, aws_db_instance.main.address, aws_db_instance.main.port, aws_db_instance.main.name)
+  value     = format("postgres://%s@%s:%s/%s", aws_db_instance.main.username, aws_db_instance.main.address, aws_db_instance.main.port, aws_db_instance.main.name)
   sensitive = true
 }

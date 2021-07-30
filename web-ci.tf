@@ -1,7 +1,7 @@
 ### CodeBuild + CodePipeline for building/deploying the web UI
 
 resource "aws_codepipeline" "web" {
-  name     = format("Tagioalisi-Web__%s", var.stack_suffix)
+  name     = format("Tagioalisi_%s_Web", upper(var.stack_id)) # AWS Console says: Valid characters are [A-Za-z0-9.@-_]
   role_arn = aws_iam_role.web_ci.arn
 
   artifact_store {
@@ -43,7 +43,7 @@ resource "aws_codepipeline" "web" {
       version          = "1"
 
       configuration = {
-        ProjectName = format("Tagioalisi-Web__%s", var.stack_suffix)
+        ProjectName = format("Tagioalisi_%s_Web", upper(var.stack_id))
       }
     }
   }
@@ -73,7 +73,7 @@ resource "aws_codepipeline" "web" {
 }
 
 resource "aws_codebuild_project" "web" {
-  name          = format("Tagioalisi-Web__%s", var.stack_suffix)
+  name          = format("Tagioalisi_%s_Web", upper(var.stack_id))
   description   = "test_codebuild_project"
   build_timeout = "5"
   service_role  = aws_iam_role.web_ci.arn
@@ -84,7 +84,7 @@ resource "aws_codebuild_project" "web" {
 
   cache {
     type     = "S3"
-    location = format("%s/cache", aws_s3_bucket.web_ci.bucket)
+    location = format("%s/codebuild/cache/web", aws_s3_bucket.web_ci.bucket)
   }
 
   environment {
@@ -113,7 +113,7 @@ resource "aws_codebuild_project" "web" {
 
     s3_logs {
       status   = "ENABLED"
-      location = format("%s/build_logs", aws_s3_bucket.web_ci.id)
+      location = format("%s/codebuild/web/logs", aws_s3_bucket.web_ci.id)
     }
   }
 
@@ -125,13 +125,13 @@ resource "aws_codebuild_project" "web" {
 }
 
 resource "aws_s3_bucket" "web_ci" {
-  bucket = format("tagioalisi-web-codepipeline-%s", lower(var.stack_suffix))
-  acl    = "private"
+  bucket        = format("tagioalisi-%s-web-ci", lower(var.stack_id))
+  acl           = "private"
   force_destroy = true
 }
 
 resource "aws_iam_role" "web_ci" {
-  name = format("Tagioalisi-Web-CI__%s", var.stack_suffix)
+  name = format("Tagioalisi-%s-Web-CI", upper(var.stack_id))
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -152,7 +152,7 @@ resource "aws_iam_role" "web_ci" {
     ]
   })
   inline_policy {
-    name = format("Tagioalisi-Web-CI-Policy__%s", var.stack_suffix)
+    name = format("Tagioalisi-%s-Web-CI-Inline-Policy", upper(var.stack_id))
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
@@ -240,7 +240,7 @@ resource "aws_s3_bucket_policy" "web_public" {
   bucket = aws_s3_bucket.web.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Id      = format("Tagioalisi-Web-S3-Policy__%s", var.stack_suffix)
+    Id      = format("Tagioalisi-%s-Web-S3-Policy", upper(var.stack_id))
     Statement = [
       {
         Effect    = "Allow"

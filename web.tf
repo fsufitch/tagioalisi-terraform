@@ -1,8 +1,8 @@
 ### Configuration for the web interface runtime
 
 resource "aws_s3_bucket" "web" {
-  bucket = format("tagioalisi-web-%s", lower(var.stack_suffix))
-  acl    = "public-read"
+  bucket        = format("tagioalisi-%s-web", lower(var.stack_id))
+  acl           = "public-read"
   force_destroy = true
 
   # TODO: allow pipeline service role write access

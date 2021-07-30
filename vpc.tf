@@ -17,14 +17,14 @@ resource "aws_subnet" "main" {
 }
 
 resource "aws_subnet" "rds_subnet1" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.8.2.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.8.2.0/24"
   availability_zone = "us-east-1a"
 }
 
 resource "aws_subnet" "rds_subnet2" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.8.3.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.8.3.0/24"
   availability_zone = "us-east-1b"
 }
 resource "aws_internet_gateway" "igw" {

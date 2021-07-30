@@ -2,12 +2,15 @@
 
 resource "random_password" "db" {
   length = 32
-}
 
+  keepers = {
+    "key" = "value"
+  }
+}
 
 resource "aws_db_subnet_group" "main" {
   name       = "main_subnet_group"
-  subnet_ids = [ aws_subnet.rds_subnet1.id, aws_subnet.rds_subnet2.id ]
+  subnet_ids = [aws_subnet.rds_subnet1.id, aws_subnet.rds_subnet2.id]
 }
 
 resource "aws_db_parameter_group" "main" {
@@ -36,4 +39,10 @@ resource "aws_db_instance" "main" {
   username = data.aws_ssm_parameter.db_user.value
   password = random_password.db.result
   name     = "tagioalisi"
+
+  final_snapshot_identifier = random_id.final_snapshot_identifier.id
+}
+
+resource "random_id" "final_snapshot_identifier" {
+  byte_length = 8
 }
